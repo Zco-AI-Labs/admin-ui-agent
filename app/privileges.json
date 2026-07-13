@@ -1,0 +1,184 @@
+{
+  "privileges": {
+    "hub.details.view": {
+      "name": "View Hub Details",
+      "description": "Allows viewing general hub info.",
+      "tools": ["open_hub_name"]
+    },
+    "hub.details.edit": {
+      "name": "Edit Hub Details",
+      "description": "Allows changing the hub name and general info.",
+      "tools": ["open_hub_name"]
+    },
+    "hub.avatar.view": {
+      "name": "View Hub Avatar",
+      "description": "Allows viewing the hub logo.",
+      "tools": ["open_hub_avatar"]
+    },
+    "hub.avatar.edit": {
+      "name": "Edit Hub Avatar",
+      "description": "Allows changing the hub logo.",
+      "tools": ["open_hub_avatar"]
+    },
+    "hub.prompt.view": {
+      "name": "View Hub Personality",
+      "description": "Allows viewing the hub personality prompt.",
+      "tools": ["open_hub_prompt"]
+    },
+    "hub.prompt.edit": {
+      "name": "Edit Hub Personality",
+      "description": "Allows changing the hub personality prompt.",
+      "tools": ["open_hub_prompt"]
+    },
+    "hub.discovery.view": {
+      "name": "View Hub Discovery",
+      "description": "Allows viewing the hub discovery settings.",
+      "tools": ["open_hub_discovery"]
+    },
+    "hub.discovery.edit": {
+      "name": "Edit Hub Discovery",
+      "description": "Allows changing the hub discovery settings.",
+      "tools": ["open_hub_discovery"]
+    },
+    "hub.agents.view": {
+      "name": "View Hub Agents",
+      "description": "Allows viewing the list of active hub agents.",
+      "tools": ["open_hub_agents"]
+    },
+    "hub.agents.edit": {
+      "name": "Manage Hub Agents",
+      "description": "Allows adding, removing or configuring hub subagents.",
+      "tools": ["open_hub_agents"]
+    },
+    "hub.knowledge.view": {
+      "name": "View Hub Knowledge",
+      "description": "Allows viewing RAG knowledge sources.",
+      "tools": ["open_hub_rag_web", "open_hub_rag_files", "open_hub_rag_youtube"]
+    },
+    "hub.knowledge.edit": {
+      "name": "Manage Hub Knowledge",
+      "description": "Allows uploading files, websites, or YouTube videos to RAG.",
+      "tools": ["open_hub_rag_web", "open_hub_rag_files", "open_hub_rag_youtube"]
+    },
+    "hub.members.view": {
+      "name": "View Hub Members",
+      "description": "Allows viewing hub members and staff.",
+      "tools": ["open_hub_members", "open_hub_add_member"]
+    },
+    "hub.members.edit": {
+      "name": "Manage Hub Members",
+      "description": "Allows changing hub member assignments.",
+      "tools": ["open_hub_members"]
+    },
+    "hub.members.create": {
+      "name": "Invite Hub Members",
+      "description": "Allows inviting new members to the hub.",
+      "tools": ["open_hub_add_member"]
+    },
+    "hub.roles.view": {
+      "name": "View Hub Roles",
+      "description": "Allows viewing hub roles and permissions.",
+      "tools": ["open_hub_roles"]
+    },
+    "hub.roles.edit": {
+      "name": "Manage Hub Roles",
+      "description": "Allows editing hub roles and permissions.",
+      "tools": ["open_hub_roles"]
+    },
+    "hub.usage.view": {
+      "name": "View Hub Usage",
+      "description": "Allows viewing hub usage metrics and analytics.",
+      "tools": ["open_hub_usage"]
+    },
+    "org.details.view": {
+      "name": "View Org Details",
+      "description": "Allows viewing organization details.",
+      "tools": ["open_org_details"]
+    },
+    "org.details.edit": {
+      "name": "Edit Org Details",
+      "description": "Allows editing organization details.",
+      "tools": ["open_org_details"]
+    },
+    "org.avatar.view": {
+      "name": "View Org Avatar",
+      "description": "Allows viewing organization logo.",
+      "tools": ["open_org_avatar"]
+    },
+    "org.avatar.edit": {
+      "name": "Edit Org Avatar",
+      "description": "Allows changing organization logo.",
+      "tools": ["open_org_avatar"]
+    },
+    "org.prompt.view": {
+      "name": "View Org Prompt",
+      "description": "Allows viewing organization system prompt.",
+      "tools": ["open_org_prompt"]
+    },
+    "org.prompt.edit": {
+      "name": "Edit Org Prompt",
+      "description": "Allows editing organization-wide system prompt.",
+      "tools": ["open_org_prompt"]
+    },
+    "org.contacts.view": {
+      "name": "View Org Contacts",
+      "description": "Allows viewing organization contact info.",
+      "tools": ["open_org_contacts"]
+    },
+    "org.contacts.edit": {
+      "name": "Edit Org Contacts",
+      "description": "Allows editing organization contact info.",
+      "tools": ["open_org_contacts"]
+    },
+    "org.hubs.view": {
+      "name": "View Org Hubs",
+      "description": "Allows viewing organization hubs.",
+      "tools": ["open_org_hubs", "open_org_create_hub"]
+    },
+    "org.hubs.create": {
+      "name": "Create Org Hubs",
+      "description": "Allows creating new hubs under the organization.",
+      "tools": ["open_org_hubs", "open_org_create_hub"]
+    },
+    "org.members.view": {
+      "name": "View Org Members",
+      "description": "Allows viewing organization members list.",
+      "tools": ["open_org_members", "open_org_add_member"]
+    },
+    "org.members.manage": {
+      "name": "Manage Org Members",
+      "description": "Allows managing organization members.",
+      "tools": ["open_org_members"]
+    },
+    "org.members.invite": {
+      "name": "Invite Org Members",
+      "description": "Allows inviting new members to the organization.",
+      "tools": ["open_org_add_member"]
+    },
+    "org.roles.view": {
+      "name": "View Org Roles",
+      "description": "Allows viewing organization roles.",
+      "tools": ["open_org_roles"]
+    },
+    "org.roles.edit": {
+      "name": "Manage Org Roles",
+      "description": "Allows managing organization roles and privileges.",
+      "tools": ["open_org_roles"]
+    },
+    "org.billing.view": {
+      "name": "View Org Billing",
+      "description": "Allows viewing organization billing details.",
+      "tools": ["open_org_billing"]
+    },
+    "org.billing.manage": {
+      "name": "Manage Org Billing",
+      "description": "Allows managing organization billing and plan subscription.",
+      "tools": ["open_org_billing"]
+    },
+    "org.usage.view": {
+      "name": "View Org Usage",
+      "description": "Allows viewing organization usage statistics.",
+      "tools": ["open_org_usage"]
+    }
+  }
+}
