@@ -64,6 +64,17 @@ async def queue_admin_widget(widget_type: str, edit_privilege: str = None) -> st
     hub_id = context.auth.hub_id
     org_id = context.auth.org_id
     
+    # 0. Enforce Scope Boundaries
+    is_org_widget = widget_type.startswith("org_")
+    is_hub_widget = widget_type.startswith("hub_")
+    is_org_scope = (hub_id == org_id) or (not hub_id) or (hub_id == "platform")
+    
+    if is_org_widget and not is_org_scope:
+        return "I cannot open Organization settings from within a Hub workspace. Please switch to the Organization level first."
+        
+    if is_hub_widget and is_org_scope:
+        return "I cannot open Hub settings from the Organization page. Please select or switch to a Hub workspace first."
+    
     # 1. Resolve readOnly flag dynamically from token
     read_only = True
     if edit_privilege:
