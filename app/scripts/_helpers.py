@@ -23,8 +23,7 @@ def check_edit_privilege(edit_privilege: str) -> bool:
     # Check if MagicMock
     if hasattr(token, "_mock_return_value") or type(token).__name__ == "MagicMock":
         return True
-
-    secret_key = os.environ.get("HUBSCAPE_HMAC_SECRET") or os.environ.get("HUBSCAPE_KMS_MASTER_KEY") or "dev_secret_key_dont_use_in_prod"
+    secret_key = hubscape_adk.get_hmac_secret()
 
     try:
         # Decode JWT HMAC
