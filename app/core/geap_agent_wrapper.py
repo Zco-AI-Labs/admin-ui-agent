@@ -59,28 +59,45 @@ class GEAPAgentWrapper:
         # ----------------------------------------------------
         
         with hubscape_adk.context_session(remote_ctx):
-            if not self.runner:
+            if not hasattr(self, "session_service"):
                 from google.adk.sessions.in_memory_session_service import InMemorySessionService
                 from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
                 from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
                 from google.adk.auth.credential_service.in_memory_credential_service import InMemoryCredentialService
                 
-                self.runner = Runner(
-                    agent=self.agent,
-                    app_name=self.app_name,
-                    session_service=InMemorySessionService(),
-                    artifact_service=InMemoryArtifactService(),
-                    memory_service=InMemoryMemoryService(),
-                    credential_service=InMemoryCredentialService(),
-                    auto_create_session=True
-                )
+                self.session_service = InMemorySessionService()
+                self.artifact_service = InMemoryArtifactService()
+                self.memory_service = InMemoryMemoryService()
+                self.credential_service = InMemoryCredentialService()
+            
+            # Concurrency-safe dynamic tool filtering based on workspace scope
+            cloned_agent = self.agent.clone()
+            from app.core.hubscape_adk import filter_tools_for_scope
+            cloned_agent.tools = filter_tools_for_scope(self.agent.tools, hub_id, org_id)
+            
+            # Inject Active Session Context dynamically
+            mode = (context or {}).get("mode") or "none"
+            session_context = f"[ACTIVE SESSION CONTEXT]\n- Interaction Mode: {mode}\n"
+            base_instruction = self.agent.instruction or ""
+            cloned_agent.instruction = f"{session_context}\n{base_instruction}"
+            
+            # Create a fresh runner for this request to guarantee thread safety
+            runner = Runner(
+                agent=cloned_agent,
+                app_name=self.app_name,
+                session_service=self.session_service,
+                artifact_service=self.artifact_service,
+                memory_service=self.memory_service,
+                credential_service=self.credential_service,
+                auto_create_session=True
+            )
             
             new_message = types.Content(
                 parts=[types.Part.from_text(text=question)]
             )
             
             text_response = ""
-            async for event in self.runner.run_async(
+            async for event in runner.run_async(
                 user_id=user_id,
                 session_id=session_id,
                 new_message=new_message

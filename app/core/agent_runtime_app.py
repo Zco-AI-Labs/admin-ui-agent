@@ -179,7 +179,15 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
         
         interceptor = ActionInterceptingEventQueue(event_queue, remote_ctx)
         
-        base_instruction = root_agent.instruction or ""
+        # Resolve the runner and clone the agent to ensure request-scoped concurrency safety
+        runner = await self._resolve_runner()
+        cloned_agent = runner.agent.clone()
+        
+        # Concurrency-safe dynamic tool filtering based on workspace scope
+        from app.core.hubscape_adk import filter_tools_for_scope
+        cloned_agent.tools = filter_tools_for_scope(runner.agent.tools, hub_id, org_id)
+        
+        base_instruction = runner.agent.instruction or ""
         
         # Inject Active Session Context securely at the top of the prompt (excluding sensitive database UUIDs to prevent logging leaks)
         session_context = f"""
@@ -195,7 +203,10 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
                 f"- {a.get('name')} (ID: {a.get('id')}): {a.get('description')}" for a in accessible_agents
             ) + "\n"
             
-        root_agent.instruction = f"{session_context}{roster_str}\n{base_instruction}"
+        cloned_agent.instruction = f"{session_context}{roster_str}\n{base_instruction}"
+        
+        # Bind the scoped cloned agent to this runner execution
+        runner.agent = cloned_agent
         
         # --- OPENTELEMETRY CONTEXT ENRICHMENT ---
         session_id_resolved = metadata.get("sessionId") or metadata.get("session_id") or f"session_{user_id_resolved}_{hub_id}"
@@ -325,8 +336,7 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
                         "directive": "execute_host_tool",
                         "target_tool": "openAdminWidget",
                         "parameters": {
-                            "widgetType": payload.get("widgetType"),
-                            "confirmation_obtained": payload.get("confirmation_obtained", True)
+                            "widgetType": payload.get("widgetType")
                         },
                         "message": interceptor.accumulated_text or "Opening admin widget."
                     }

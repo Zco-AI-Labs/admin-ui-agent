@@ -10,8 +10,6 @@ except ImportError:
 from typing import Generator, Optional
 from google.cloud import firestore
 
-logger = logging.getLogger(__name__)
-
 _current_context = contextvars.ContextVar("hubscape_context")
 _global_active_context = None
 
@@ -548,3 +546,47 @@ def require_tool_privilege(func):
             verify_privilege()
             return func(*args, **kwargs)
         return sync_wrapper
+
+
+def tool_scope(allowed_scopes: list[str]):
+    """
+    Decorator to restrict the workspace scopes in which this tool is allowed to be invoked.
+    Example:
+        @tool_scope(["hub"])
+        async def my_hub_only_tool():
+            ...
+    """
+    def decorator(func):
+        func._allowed_scopes = allowed_scopes
+        return func
+    return decorator
+
+
+def filter_tools_for_scope(tools: list, hub_id: str | None, org_id: str | None) -> list:
+    """
+    Filters the tools list based on the workspace scope (hub vs. org).
+    Tools decorated with @tool_scope will only be included if the active scope
+    is present in their allowed_scopes list. Tools without the decorator are
+    included by default.
+    """
+    is_org_scope = (hub_id == org_id) or (not hub_id) or (hub_id == "platform")
+    active_scope = "org" if is_org_scope else "hub"
+    
+    filtered = []
+    for tool in tools:
+        # Check __wrapped__ chain for _allowed_scopes attribute to support decorators
+        allowed_scopes = getattr(tool, "_allowed_scopes", None)
+        if allowed_scopes is None:
+            wrapped = getattr(tool, "__wrapped__", None)
+            while wrapped is not None:
+                allowed_scopes = getattr(wrapped, "_allowed_scopes", None)
+                if allowed_scopes is not None:
+                    break
+                wrapped = getattr(wrapped, "__wrapped__", None)
+                
+        if allowed_scopes is not None:
+            if active_scope not in allowed_scopes:
+                continue
+        filtered.append(tool)
+    return filtered
+
