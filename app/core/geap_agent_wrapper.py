@@ -77,7 +77,13 @@ class GEAPAgentWrapper:
             
             # Inject Active Session Context dynamically
             mode = (context or {}).get("mode") or "none"
-            session_context = f"[ACTIVE SESSION CONTEXT]\n- Interaction Mode: {mode}\n"
+            normalized_mode = "chat_pc" if mode in ("chat_pc", "chat_phone") else mode
+            session_context = (
+                "[ACTIVE SESSION CONTEXT]\n"
+                f"- Interaction Mode: {normalized_mode}\n"
+                f"- Hub ID: {hub_id or 'none'}\n"
+                f"- Organization ID: {org_id or 'none'}\n"
+            )
             base_instruction = self.agent.instruction or ""
             cloned_agent.instruction = f"{session_context}\n{base_instruction}"
             
