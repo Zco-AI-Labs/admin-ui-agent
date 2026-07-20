@@ -73,6 +73,7 @@ telemetry_org_id = ContextVar("telemetry_org_id", default=None)
 telemetry_hub_id = ContextVar("telemetry_hub_id", default=None)
 telemetry_user_id = ContextVar("telemetry_user_id", default=None)
 telemetry_conversation_id = ContextVar("telemetry_conversation_id", default=None)
+request_runner_ctx = ContextVar("request_runner_ctx", default=None)
 
 from app.agent import app as adk_app
 from app.app_utils.telemetry import setup_telemetry
@@ -146,6 +147,12 @@ class ActionInterceptingEventQueue(EventQueue):
 
 class AgentEngineA2aExecutor(A2aAgentExecutor):
     """Custom A2A Executor that intercepts requests to inject RemoteContext."""
+    async def _resolve_runner(self) -> Runner:
+        scoped = request_runner_ctx.get()
+        if scoped is not None:
+            return scoped
+        return await super()._resolve_runner()
+
     async def execute(
         self,
         context: RequestContext,
@@ -180,8 +187,8 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
         interceptor = ActionInterceptingEventQueue(event_queue, remote_ctx)
         
         # Resolve the runner and clone the agent to ensure request-scoped concurrency safety
-        runner = await self._resolve_runner()
-        cloned_agent = runner.agent.clone()
+        base_runner = await super()._resolve_runner()
+        cloned_agent = base_runner.agent.clone()
         
         workspace_type = metadata.get("workspaceType")
         workspace_id = metadata.get("workspaceId")
@@ -192,14 +199,14 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
 
         # Concurrency-safe dynamic tool filtering based on workspace scope
         from app.core.hubscape_adk import filter_tools_for_scope
-        cloned_agent.tools = filter_tools_for_scope(runner.agent.tools, workspace_type)
+        cloned_agent.tools = filter_tools_for_scope(base_runner.agent.tools, workspace_type)
         
         import logging
         logging.info("[admin-ui-agent A2A] RECEIVED METADATA: %s", json.dumps(metadata))
         logging.info("[admin-ui-agent A2A] RESOLVED: user_id=%s, org_id=%s, workspace_type=%s, workspace_id=%s, mode=%s", user_id_resolved, org_id, workspace_type, workspace_id, mode)
         logging.info("[admin-ui-agent A2A] FILTERED TOOLS: %s", [t.__name__ for t in cloned_agent.tools])
         
-        base_instruction = runner.agent.instruction or ""
+        base_instruction = base_runner.agent.instruction or ""
         
         # Inject Active Session Context securely at the top of the prompt (excluding sensitive database UUIDs to prevent logging leaks)
         normalized_mode = "chat_pc" if mode in ("chat_pc", "chat_phone") else mode
@@ -221,8 +228,18 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
             
         cloned_agent.instruction = f"{session_context}{roster_str}\n{base_instruction}"
         
-        # Bind the scoped cloned agent to this runner execution
-        runner.agent = cloned_agent
+        # Instantiate a request-scoped runner to avoid polluting the process-wide singleton
+        scoped_runner = Runner(
+            agent=cloned_agent,
+            app_name=base_runner.app_name,
+            session_service=base_runner.session_service,
+            artifact_service=getattr(base_runner, "artifact_service", None),
+            memory_service=getattr(base_runner, "memory_service", None),
+            credential_service=getattr(base_runner, "credential_service", None),
+            auto_create_session=getattr(base_runner, "auto_create_session", False),
+        )
+        
+        token = request_runner_ctx.set(scoped_runner)
         
         # --- OPENTELEMETRY CONTEXT ENRICHMENT ---
         session_id_resolved = metadata.get("sessionId") or metadata.get("session_id") or f"session_{user_id_resolved}_{hub_id}"
@@ -324,7 +341,7 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
             with hubscape_adk.context_session(remote_ctx):
                 await super().execute(context, interceptor)
         finally:
-            root_agent.instruction = base_instruction
+            request_runner_ctx.reset(token)
 
         # Determine if there are actions to propagate
         has_actions = bool(remote_ctx.actions)
