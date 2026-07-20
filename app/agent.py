@@ -13,6 +13,38 @@ from google.genai import types
 
 from app.core.load_local_tools import load_local_tools
 
+# Statically import scripts and tools to ensure the Vertex AI packaging dependency analyzer bundles them in the cloud deployment
+from app.scripts import (
+    open_hub_add_member,
+    open_hub_agents,
+    open_hub_avatar,
+    open_hub_discovery,
+    open_hub_members,
+    open_hub_name,
+    open_hub_prompt,
+    open_hub_rag_files,
+    open_hub_rag_web,
+    open_hub_rag_youtube,
+    open_hub_roles,
+    open_hub_usage,
+    open_org_add_member,
+    open_org_avatar,
+    open_org_billing,
+    open_org_contacts,
+    open_org_create_hub,
+    open_org_details,
+    open_org_hubs,
+    open_org_members,
+    open_org_prompt,
+    open_org_roles,
+    open_org_usage,
+)
+from app.core.system_tools import (
+    consultAgent,
+    discover_agents,
+)
+
+
 # 1. Read system prompt instructions from SKILL.md and load tools at module level
 runtime_dir = os.path.dirname(os.path.abspath(__file__))
 skill_md_path = os.path.join(runtime_dir, "SKILL.md")

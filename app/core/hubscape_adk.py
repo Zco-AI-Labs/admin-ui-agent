@@ -586,8 +586,11 @@ def filter_tools_for_scope(tools: list, hub_id: str | None, org_id: str | None =
         else:
             active_scope = "hub"
             
+    import logging
+    logging.info(f"[adk] filter_tools_for_scope: active_scope={active_scope}, input tools count={len(tools)}")
     filtered = []
     for tool in tools:
+        tool_name = getattr(tool, "__name__", str(tool))
         # Check __wrapped__ chain for _allowed_scopes attribute to support decorators
         allowed_scopes = getattr(tool, "_allowed_scopes", None)
         if allowed_scopes is None:
@@ -598,9 +601,12 @@ def filter_tools_for_scope(tools: list, hub_id: str | None, org_id: str | None =
                     break
                 wrapped = getattr(wrapped, "__wrapped__", None)
                 
+        logging.info(f"[adk] Tool: {tool_name}, allowed_scopes={allowed_scopes}")
         if allowed_scopes is not None:
             if active_scope not in allowed_scopes:
+                logging.info(f"[adk]   Skipped {tool_name} (active_scope {active_scope} not in {allowed_scopes})")
                 continue
+        logging.info(f"[adk]   Kept {tool_name}")
         filtered.append(tool)
     return filtered
 
