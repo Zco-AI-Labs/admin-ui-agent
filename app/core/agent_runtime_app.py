@@ -183,13 +183,20 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
         runner = await self._resolve_runner()
         cloned_agent = runner.agent.clone()
         
+        workspace_type = metadata.get("workspaceType")
+        workspace_id = metadata.get("workspaceId")
+        if not workspace_type or not workspace_id:
+            is_org_scope = (hub_id == org_id) or (not hub_id) or (hub_id == "platform")
+            workspace_type = "organization" if is_org_scope else "hub"
+            workspace_id = org_id if is_org_scope else hub_id
+
         # Concurrency-safe dynamic tool filtering based on workspace scope
         from app.core.hubscape_adk import filter_tools_for_scope
-        cloned_agent.tools = filter_tools_for_scope(runner.agent.tools, hub_id, org_id)
+        cloned_agent.tools = filter_tools_for_scope(runner.agent.tools, workspace_type)
         
         import logging
         logging.info("[admin-ui-agent A2A] RECEIVED METADATA: %s", json.dumps(metadata))
-        logging.info("[admin-ui-agent A2A] RESOLVED: user_id=%s, org_id=%s, hub_id=%s, mode=%s", user_id_resolved, org_id, hub_id, mode)
+        logging.info("[admin-ui-agent A2A] RESOLVED: user_id=%s, org_id=%s, workspace_type=%s, workspace_id=%s, mode=%s", user_id_resolved, org_id, workspace_type, workspace_id, mode)
         logging.info("[admin-ui-agent A2A] FILTERED TOOLS: %s", [t.__name__ for t in cloned_agent.tools])
         
         base_instruction = runner.agent.instruction or ""
@@ -197,9 +204,10 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
         # Inject Active Session Context securely at the top of the prompt (excluding sensitive database UUIDs to prevent logging leaks)
         normalized_mode = "chat_pc" if mode in ("chat_pc", "chat_phone") else mode
         session_context = (
-            "[ACTIVE SESSION CONTEXT]\n"
+            "[ACTIVE WORKSPACE CONTEXT]\n"
             f"- Interaction Mode: {normalized_mode}\n"
-            f"- Hub ID: {hub_id or 'none'}\n"
+            f"- Workspace Type: {workspace_type}\n"
+            f"- Workspace ID: {workspace_id or 'none'}\n"
             f"- Organization ID: {org_id or 'none'}\n"
         )
         

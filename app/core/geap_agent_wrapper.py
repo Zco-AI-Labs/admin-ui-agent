@@ -70,18 +70,26 @@ class GEAPAgentWrapper:
                 self.memory_service = InMemoryMemoryService()
                 self.credential_service = InMemoryCredentialService()
             
+            workspace_type = (context or {}).get("workspaceType")
+            workspace_id = (context or {}).get("workspaceId")
+            if not workspace_type or not workspace_id:
+                is_org_scope = (hub_id == org_id) or (not hub_id) or (hub_id == "platform")
+                workspace_type = "organization" if is_org_scope else "hub"
+                workspace_id = org_id if is_org_scope else hub_id
+
             # Concurrency-safe dynamic tool filtering based on workspace scope
             cloned_agent = self.agent.clone()
             from app.core.hubscape_adk import filter_tools_for_scope
-            cloned_agent.tools = filter_tools_for_scope(self.agent.tools, hub_id, org_id)
+            cloned_agent.tools = filter_tools_for_scope(self.agent.tools, workspace_type)
             
             # Inject Active Session Context dynamically
             mode = (context or {}).get("mode") or "none"
             normalized_mode = "chat_pc" if mode in ("chat_pc", "chat_phone") else mode
             session_context = (
-                "[ACTIVE SESSION CONTEXT]\n"
+                "[ACTIVE WORKSPACE CONTEXT]\n"
                 f"- Interaction Mode: {normalized_mode}\n"
-                f"- Hub ID: {hub_id or 'none'}\n"
+                f"- Workspace Type: {workspace_type}\n"
+                f"- Workspace ID: {workspace_id or 'none'}\n"
                 f"- Organization ID: {org_id or 'none'}\n"
             )
             base_instruction = self.agent.instruction or ""

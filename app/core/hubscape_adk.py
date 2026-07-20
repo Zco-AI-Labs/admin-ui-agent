@@ -567,16 +567,25 @@ def tool_scope(allowed_scopes: list[str]):
     return decorator
 
 
-def filter_tools_for_scope(tools: list, hub_id: str | None, org_id: str | None) -> list:
+def filter_tools_for_scope(tools: list, hub_id: str | None, org_id: str | None = None) -> list:
     """
     Filters the tools list based on the workspace scope (hub vs. org).
     Tools decorated with @tool_scope will only be included if the active scope
     is present in their allowed_scopes list. Tools without the decorator are
     included by default.
     """
-    is_org_scope = (hub_id == org_id) or (not hub_id) or (hub_id == "platform")
-    active_scope = "org" if is_org_scope else "hub"
-    
+    if org_id is not None:
+        # Legacy fallback signature: (tools, hub_id, org_id)
+        is_org_scope = (hub_id == org_id) or (not hub_id) or (hub_id == "platform")
+        active_scope = "org" if is_org_scope else "hub"
+    else:
+        # New signature: (tools, workspace_type) where hub_id parameter holds workspace_type
+        wtype = hub_id or "hub"
+        if wtype in ("organization", "org", "platform"):
+            active_scope = "org"
+        else:
+            active_scope = "hub"
+            
     filtered = []
     for tool in tools:
         # Check __wrapped__ chain for _allowed_scopes attribute to support decorators
