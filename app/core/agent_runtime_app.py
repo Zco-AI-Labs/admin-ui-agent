@@ -187,6 +187,11 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
         from app.core.hubscape_adk import filter_tools_for_scope
         cloned_agent.tools = filter_tools_for_scope(runner.agent.tools, hub_id, org_id)
         
+        import logging
+        logging.info("[admin-ui-agent A2A] RECEIVED METADATA: %s", json.dumps(metadata))
+        logging.info("[admin-ui-agent A2A] RESOLVED: user_id=%s, org_id=%s, hub_id=%s, mode=%s", user_id_resolved, org_id, hub_id, mode)
+        logging.info("[admin-ui-agent A2A] FILTERED TOOLS: %s", [t.__name__ for t in cloned_agent.tools])
+        
         base_instruction = runner.agent.instruction or ""
         
         # Inject Active Session Context securely at the top of the prompt (excluding sensitive database UUIDs to prevent logging leaks)
