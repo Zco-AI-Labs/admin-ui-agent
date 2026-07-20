@@ -505,6 +505,7 @@ def require_tool_privilege(func):
                 fernet = Fernet(derived_key.encode())
                 decrypted_bytes = fernet.decrypt(encrypted_segment.encode())
                 allowed_privilege_ids = json.loads(decrypted_bytes.decode())
+                logging.getLogger(__name__).info(f"[adk] Decrypted allowed privilege IDs: {allowed_privilege_ids}")
             except Exception as decrypt_err:
                 raise PermissionError(f"Security Block: Failed to decrypt capabilities: {decrypt_err}")
                 
@@ -524,6 +525,7 @@ def require_tool_privilege(func):
                         priv_info = privileges_config.get(priv_id) or {}
                         tools = priv_info.get("tools") or []
                         allowed_tools.extend(tools)
+                    logging.getLogger(__name__).info(f"[adk] Mapped allowed tools: {allowed_tools}")
                 except Exception as read_err:
                     logging.getLogger(__name__).warning(f"⚠️ Failed to read/parse privileges.json: {read_err}")
                 
