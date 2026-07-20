@@ -190,10 +190,13 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
         base_instruction = runner.agent.instruction or ""
         
         # Inject Active Session Context securely at the top of the prompt (excluding sensitive database UUIDs to prevent logging leaks)
-        session_context = f"""
-[ACTIVE SESSION CONTEXT]
-- Interaction Mode: {mode}
-"""
+        normalized_mode = "chat_pc" if mode in ("chat_pc", "chat_phone") else mode
+        session_context = (
+            "[ACTIVE SESSION CONTEXT]\n"
+            f"- Interaction Mode: {normalized_mode}\n"
+            f"- Hub ID: {hub_id or 'none'}\n"
+            f"- Organization ID: {org_id or 'none'}\n"
+        )
         
         # Format and append accessible agents roster
         accessible_agents = metadata.get("accessible_agents", [])
