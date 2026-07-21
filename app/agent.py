@@ -45,14 +45,31 @@ from app.core.system_tools import (
 )
 
 
-# 1. Read system prompt instructions from SKILL.md and load tools at module level
+# 1. Require SKILL.md as the Single Source of Truth for metadata (name, description) and instructions
 runtime_dir = os.path.dirname(os.path.abspath(__file__))
 skill_md_path = os.path.join(runtime_dir, "SKILL.md")
-system_instruction = "You are a highly efficient Task Manager agent."
-if os.path.exists(skill_md_path):
-    with open(skill_md_path, "r", encoding="utf-8") as f:
-        skill_content = f.read()
-    system_instruction = re.sub(r"^---.*?---", "", skill_content, flags=re.DOTALL).strip()
+if not os.path.exists(skill_md_path):
+    raise FileNotFoundError(f"Required agent definition file missing: {skill_md_path}")
+
+with open(skill_md_path, "r", encoding="utf-8") as f:
+    skill_content = f.read()
+
+fm_match = re.match(r"^---\s*\n(.*?)\n---\s*\n", skill_content, flags=re.DOTALL)
+if not fm_match:
+    raise ValueError(f"SKILL.md is missing required YAML frontmatter header (--- ... ---): {skill_md_path}")
+
+fm_text = fm_match.group(1)
+name_m = re.search(r'^name:\s*["\']?([^"\'\n]+)["\']?', fm_text, re.MULTILINE)
+if not name_m:
+    raise ValueError(f"SKILL.md frontmatter is missing required 'name:' field: {skill_md_path}")
+
+desc_m = re.search(r'^description:\s*["\']?([^"\'\n]+)["\']?', fm_text, re.MULTILINE)
+if not desc_m:
+    raise ValueError(f"SKILL.md frontmatter is missing required 'description:' field: {skill_md_path}")
+
+agent_name = name_m.group(1).strip().replace('-', '_')
+agent_description = desc_m.group(1).strip()
+system_instruction = skill_content[fm_match.end():].strip()
 
 scripts_dir = os.path.join(runtime_dir, "scripts")
 system_tools_dir = os.path.join(runtime_dir, "core", "system_tools")
@@ -62,8 +79,8 @@ from app.app_utils.vertex_gemini import get_model
 
 root_agent = AdkAgent(
     model=get_model("gemini-2.5-flash"),
-    name="admin_ui_agent",
-    description="Maps user queries and intents to administrative settings panels and configuration widgets for hubs and organizations.",
+    name=agent_name,
+    description=agent_description,
     instruction=system_instruction,
     tools=tools
 )

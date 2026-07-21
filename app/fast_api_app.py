@@ -85,8 +85,10 @@ app: FastAPI = get_fast_api_app(
     otel_to_cloud=False,
     lifespan=lifespan,
 )
-app.title = "custom-agent"
-app.description = "API for interacting with the Agent custom-agent"
+from app.agent import root_agent
+
+app.title = root_agent.name
+app.description = root_agent.description
 
 
 # Proxy routes so the Vertex AI Console Playground (reasoning_engine SDK) can
