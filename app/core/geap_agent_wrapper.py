@@ -59,16 +59,15 @@ class GEAPAgentWrapper:
         # ----------------------------------------------------
         
         with hubscape_adk.context_session(remote_ctx):
-            if not hasattr(self, "session_service"):
-                from google.adk.sessions.in_memory_session_service import InMemorySessionService
-                from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
-                from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
-                from google.adk.auth.credential_service.in_memory_credential_service import InMemoryCredentialService
-                
-                self.session_service = InMemorySessionService()
-                self.artifact_service = InMemoryArtifactService()
-                self.memory_service = InMemoryMemoryService()
-                self.credential_service = InMemoryCredentialService()
+            from google.adk.sessions.in_memory_session_service import InMemorySessionService
+            from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
+            from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
+            from google.adk.auth.credential_service.in_memory_credential_service import InMemoryCredentialService
+            
+            session_service = InMemorySessionService()
+            artifact_service = InMemoryArtifactService()
+            memory_service = InMemoryMemoryService()
+            credential_service = InMemoryCredentialService()
             
             workspace_type = (context or {}).get("workspaceType")
             workspace_id = (context or {}).get("workspaceId")
@@ -78,15 +77,19 @@ class GEAPAgentWrapper:
                 workspace_id = org_id if is_org_scope else hub_id
 
             # Concurrency-safe dynamic tool filtering based on workspace scope
-            cloned_agent = self.agent.clone()
-            from app.core.hubscape_adk import filter_tools_for_scope
-            cloned_agent.tools = filter_tools_for_scope(self.agent.tools, workspace_type)
+            cloned_agent = hubscape_adk.filter_tools_for_scope(
+                agent=self.agent,
+                user_privileges=remote_ctx.user_privileges,
+                workspace_type=workspace_type,
+                workspace_id=workspace_id,
+                org_id=org_id
+            )
             
-            # Inject Active Session Context dynamically
-            mode = (context or {}).get("mode") or "none"
-            normalized_mode = "chat_pc" if mode in ("chat_pc", "chat_phone") else mode
+            # Inject Active Workspace Context into instruction block
+            raw_mode = (context or {}).get("interaction_mode") or (context or {}).get("mode") or "chat_pc"
+            normalized_mode = "chat_pc" if raw_mode == "chat_phone" else raw_mode
             session_context = (
-                "[ACTIVE WORKSPACE CONTEXT]\n"
+                f"[ACTIVE WORKSPACE CONTEXT]\n"
                 f"- Interaction Mode: {normalized_mode}\n"
                 f"- Workspace Type: {workspace_type}\n"
                 f"- Workspace ID: {workspace_id or 'none'}\n"
@@ -99,10 +102,10 @@ class GEAPAgentWrapper:
             runner = Runner(
                 agent=cloned_agent,
                 app_name=self.app_name,
-                session_service=self.session_service,
-                artifact_service=self.artifact_service,
-                memory_service=self.memory_service,
-                credential_service=self.credential_service,
+                session_service=session_service,
+                artifact_service=artifact_service,
+                memory_service=memory_service,
+                credential_service=credential_service,
                 auto_create_session=True
             )
             

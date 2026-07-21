@@ -283,6 +283,9 @@ class AgentEngineA2aExecutor(A2aAgentExecutor):
                     from opentelemetry.sdk._logs import LogRecordProcessor
 
                     class BillingContextLogRecordProcessor(LogRecordProcessor):
+                        def emit(self, log_record, context=None):
+                            self.on_emit(log_record, context)
+
                         def on_emit(self, log_record, context=None):
                             try:
                                 # 1. Try tracing span attributes
