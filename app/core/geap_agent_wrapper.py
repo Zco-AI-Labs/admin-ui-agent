@@ -113,18 +113,23 @@ class GEAPAgentWrapper:
                 parts=[types.Part.from_text(text=question)]
             )
             
-            text_response = ""
+            collected_outputs = []
             async for event in runner.run_async(
                 user_id=user_id,
                 session_id=session_id,
                 new_message=new_message
             ):
-                if event.output:
-                    text_response += event.output
-                elif event.content and event.content.parts:
-                    for part in event.content.parts:
-                        if part.text:
-                            text_response += part.text
+                out = getattr(event, "output", None)
+                if not out and getattr(event, "content", None) and getattr(event.content, "parts", None):
+                    text_parts = [p.text for p in event.content.parts if getattr(p, "text", None)]
+                    if text_parts:
+                        out = "\n".join(text_parts)
+                if out and isinstance(out, str) and out.strip():
+                    clean_out = out.strip()
+                    if not collected_outputs or clean_out != collected_outputs[-1].strip():
+                        collected_outputs.append(clean_out)
+            
+            text_response = "\n".join(collected_outputs)
             
             # Record final execution latency on active span
             try:
