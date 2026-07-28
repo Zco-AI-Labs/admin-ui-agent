@@ -64,9 +64,10 @@ async def queue_admin_widget(widget_type: str, edit_privilege: str = None) -> st
     org_id = context.auth.org_id
     
     # 0. Enforce Scope Boundaries
+    workspace_type = context.raw_context.get("workspaceType") or ("organization" if (not hub_id or hub_id == "platform" or (org_id and hub_id == org_id)) else "hub")
     is_org_widget = widget_type.startswith("org_")
     is_hub_widget = widget_type.startswith("hub_")
-    is_org_scope = (hub_id == org_id) or (not hub_id) or (hub_id == "platform")
+    is_org_scope = workspace_type in ("organization", "org", "platform")
     
     if is_org_widget and not is_org_scope:
         return "I cannot open Organization settings from within a Hub workspace. Please switch to the Organization level first."
