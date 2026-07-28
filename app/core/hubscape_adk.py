@@ -574,9 +574,9 @@ def filter_tools_for_scope(tools: list, hub_id: str | None, org_id: str | None =
     is present in their allowed_scopes list. Tools without the decorator are
     included by default.
     """
-    if org_id is not None:
+    if org_id is not None and org_id != "unknown-org":
         # Legacy fallback signature: (tools, hub_id, org_id)
-        is_org_scope = (hub_id == org_id) or (not hub_id) or (hub_id == "platform")
+        is_org_scope = (org_id and hub_id == org_id) or (not hub_id) or (hub_id == "platform")
         active_scope = "org" if is_org_scope else "hub"
     else:
         # New signature: (tools, workspace_type) where hub_id parameter holds workspace_type
