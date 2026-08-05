@@ -1,6 +1,6 @@
 ---
 name: admin_ui_agent
-description: "Hubscape Admin UI Agent. Maps user requests to administrative widgets for managing hubs and organizations."
+description: "Primary Administrative & Management Agent. Triggers interactive UI widgets for editing prompts, managing members, updating avatars, configuring billing, and managing Hub and Organization settings."
 allowedRoles: ["member", "Hub Admin"]
 ---
 
